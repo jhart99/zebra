@@ -13,6 +13,7 @@ class ZebraLabel(object):
     print_rate = ('A','C','C')
     fields = None
     font = None
+    # all of the dimensions are in pixels.  For GX430t this is 300 dpi so 600 = 2 inches
     def __init__(self,width=600,height=226,labels_per_line=1):
         self.width = width
         self.height = height
@@ -26,6 +27,7 @@ class ZebraLabel(object):
         output.append(self._footer())
         return ''.join(output)
     def _header(self):
+        # This makes all the non-printable settings for the printer defining the labels
         output = list()
         output.append('^XA')
         output.append('^LH{0},{1}'.format(*(self.label_home)))
@@ -35,11 +37,14 @@ class ZebraLabel(object):
         output.append('^PR{0},{1},{2}'.format(*(self.print_rate)))
         return ''.join(output)
     def _footer(self):
+        # This ends the label
         return '^XZ'
 class RectLabel(ZebraLabel):
     def __init__(self):
+        # This defines the label I actually use in lab
         ZebraLabel.__init__(self,width=320,height=188,labels_per_line=1)
     def __str__(self):
+        # This returns the string representation of the label including the header and footer
         output = list()
         output.append(ZebraLabel._header(self))
         if self.font:
@@ -51,7 +56,8 @@ class RectLabel(ZebraLabel):
         output.append(ZebraLabel._footer(self))
         return ''.join(output)
 class ZebraField(object):
-    origin = (0,0)
+    # This object defines a field on the label.  This can be a text field or a barcode if you change the font.
+    origin = (0,0) # Position on the label
     font = (0,0,0)
     data = ''
     def __init__(self,data='',origin=(0,0),font=(0,0,0)):
@@ -74,6 +80,7 @@ class ZebraField(object):
         output.append('^FD{0}^FS'.format(self.data))
         return ''.join(output)
 def webpage(in_form):
+    # This generates the form for the webpage that you can fill in
     print "Content-type: text/html"
     print
     print """
@@ -103,23 +110,26 @@ def main():
     formdict["label"] = "" if "label" not in form else form.getvalue("label")
     webpage(formdict)
     if "line1" in form:
+        # if we have the lines filled in it will generate a label and a 4 lines of fields
         label = RectLabel()
         label.fields.append(ZebraField(form.getvalue("line1",""),(20,20),(0,34,0)))
         label.fields.append(ZebraField(form.getvalue("line2",""),(20,57),(0,34,0)))
         label.fields.append(ZebraField(form.getvalue("line3",""),(20,94),(0,34,0)))
         label.fields.append(ZebraField(form.getvalue("line4",""),(20,131),(0,34,0)))
-
+        # Then it will try to save a temporary file with the ZPL in it
         try:
             temp_label = tempfile.NamedTemporaryFile('w+b',delete=False)
             temp_label.write(str(label))
             temp_label.close()
         except IOError:
             pass
-#        print temp_label
-        c = cups.Connection()
+#        print temp_labelo
+        # Finally, connect to the printer and send the ZPL to print it out
+        c = cups.Connection(host="vogt1005.scripps.edu")
 #	print c.getPrinters()
         c.printFile("Zebra", temp_label.name, "ZPL", dict())
     if "label" in form:
+        # if you fill in the cut and paste part it will make a label from each line
         labeldata = form.getvalue("label","")
         labels = labeldata.splitlines()
         for labelline in labels:
@@ -140,7 +150,7 @@ def main():
             except IOError:
                 pass
 #            print temp_label
-            c = cups.Connection()
+            c = cups.Connection(host="vogt1005.scripps.edu")
 #            print c.getPrinters()
             c.printFile("Zebra", temp_label.name, "ZPL", dict())
  
