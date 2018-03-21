@@ -1,0 +1,55 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: zebra
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zebra
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: vogt1005.scripps.edu:5000/zebra
+        name: zebra
+        imagePullPolicy: Always
+        resources:
+            limits:
+                cpu: 0.1
+                memory: 1Gi
+            requests:
+                cpu: 0.1
+                memory: 1Gi
+        ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: zebra
+    labels:
+        name: zebra
+spec:
+    ports:
+        - protocol: TCP
+          port: 8000
+          targetPort: http
+    selector:
+        app: zebra
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: zebra-ingress
+spec:
+    rules:
+        - host: ccle.rnatr.com
+          http:
+              paths:
+                  - backend:
+                      serviceName: zebra
+                      servicePort: 8000
+                    path: /cgi-bin/

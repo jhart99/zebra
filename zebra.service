@@ -1,0 +1,15 @@
+[Unit]
+Description=Zebra
+After=docker-virt-up.service
+Requires=docker-virt-up.service
+
+[Service]
+Restart=always
+RestartSec=3s
+ExecStartPre=-/usr/bin/docker kill zebra
+ExecStartPre=-/usr/bin/docker rm zebra
+ExecStartPre=/usr/bin/docker pull vogt1005.scripps.edu:5000/zebra
+ExecStart=/usr/bin/docker run --name=zebra -p 8000:80 --rm vogt1005.scripps.edu:5000/zebra
+
+[Install]
+WantedBy=multi-user.target
